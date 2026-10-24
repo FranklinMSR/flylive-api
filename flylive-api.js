@@ -3,16 +3,22 @@ const axios = require("axios");
 const app = express();
 
 const PORT = process.env.PORT || 3000;
-const AVWX_TOKEN = "7DskonPIuz87tDyH8Y70ltAz38XJ5fLa8i3TvAbhZw8";
+const AVWX_TOKEN = process.env.AVWX_TOKEN;
+
+if (!AVWX_TOKEN) {
+  console.error("Defina a variável de ambiente AVWX_TOKEN antes de iniciar.");
+  process.exit(1);
+}
 
 app.get("/", async (req, res) => {
-  const icao = (req.query.icao || "").toUpperCase();
-  if (!icao || icao.length !== 4) {
+  const icao = String(req.query.icao || "").toUpperCase();
+  if (!/^[A-Z0-9]{4}$/.test(icao)) {
     return res.status(400).send("ICAO inválido");
   }
 
   try {
     const apiRes = await axios.get(`https://avwx.rest/api/metar/${icao}`, {
+      timeout: 10000,
       headers: { Authorization: `Bearer ${AVWX_TOKEN}` },
     });
     res.type("text/plain").send(apiRes.data.raw + "\n");
